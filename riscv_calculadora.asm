@@ -1,56 +1,62 @@
-.text
+.global _start
+    .text
 
-# 1. SOMA (A + B)
-# Entrada: a0 = A, a1 = B | Saída: a0 = Resultado
+# --- Ponto de entrada do programa ---
+_start:
+    # Teste: Soma (12 + 3)
+    li      a0, 12
+    li      a1, 3
+    jal     ra, add_riscv
+    
+    # O resultado da soma agora está em a0. 
+    # Pulamos para o fim para encerrar o simulador corretamente.
+    j       fim_programa
+
+# --- Funções Matemáticas ---
+
     .global add_riscv
 add_riscv:
-    add     a0, a0, a1      # a0 = a0 + a1
+    add     a0, a0, a1
     ret
 
-# 2. SUBTRAÇÃO (A - B)
-# Entrada: a0 = A, a1 = B | Saída: a0 = Resultado
     .global sub_riscv
 sub_riscv:
-    sub     a0, a0, a1      # a0 = a0 - a1
+    sub     a0, a0, a1
     ret
 
-# 3. MULTIPLICAÇÃO (A * B)
-# Entrada: a0 = A, a1 = B | Saída: a0 = Resultado
     .global mul_riscv
 mul_riscv:
-    mul     a0, a0, a1      # a0 = a0 * a1 (Requer Extensão M)
+    mul     a0, a0, a1
     ret
 
-# 4. DIVISÃO (A / B) com proteção contra divisão por zero
-# Entrada: a0 = A, a1 = B | Saída: a0 = Resultado
     .global div_riscv
 div_riscv:
-    beqz    a1, div_zero    # "Branch if Equal to Zero": se a1 for 0, desvia
-    div     a0, a0, a1      # Divisão sinalizada (Requer Extensão M)
+    beqz    a1, div_zero
+    div     a0, a0, a1
     ret
 div_zero:
-    li      a0, 0           # "Load Immediate": carrega 0 no registrador de retorno
+    li      a0, 0
     ret
 
-# 5. FATORIAL (A!)
-# Entrada: a0 = A | Saída: a0 = Resultado
     .global fat_riscv
 fat_riscv:
-    bltz    a0, fat_erro    # "Branch if Less Than Zero": se A < 0, desvia
-    
-    li      a1, 1           # a1 = Acumulador (inicia em 1)
-    li      t0, 1           # t0 = Constante 1 (usada para comparação)
-    ble     a0, t0, fat_fim # Se A <= 1, vai direto para o fim
-
+    bltz    a0, fat_erro
+    li      a1, 1
+    li      t0, 1
+    ble     a0, t0, fat_fim
 fat_loop:
-    mul     a1, a1, a0      # Acumulador = Acumulador * A
-    addi    a0, a0, -1      # A = A - 1 (RISC-V não tem 'sub' com imediato)
-    bgt     a0, t0, fat_loop# Se A > 1, repete o loop
-
+    mul     a1, a1, a0
+    addi    a0, a0, -1
+    bgt     a0, t0, fat_loop
 fat_fim:
-    mv      a0, a1          # Move o acumulador para a0 (retorno)
+    mv      a0, a1
+    ret
+fat_erro:
+    li      a0, 0
     ret
 
-fat_erro:
-    li      a0, 0           # Retorna 0 para entradas inválidas
-    ret
+# --- Finalização Segura ---
+fim_programa:
+    li      a7, 93          # Código da syscall para exit
+    li      a0, 0           # Código de retorno (0 = sucesso)
+    ecall                   # Encerra o programa
